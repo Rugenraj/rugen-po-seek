@@ -141,6 +141,24 @@
         inset 0 0 10px rgba(245, 158, 11, 0.10);
     }
 
+    /* ─── MOBILE NAV ─────────────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      #skipNav {
+        top: 6px;
+        padding: 5px 8px;
+        gap: 0;
+        max-width: calc(100vw - 16px);
+      }
+      .nav-brand { display: none; }
+      .nav-divider { display: none; }
+      .nav-links { gap: 6px; padding: 0 2px; }
+      #skipNav button {
+        padding: 5px 12px;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+      }
+    }
+
     /* ─── DIM OVERLAY (fades in when panel opens) ──────────────────────────────── */
     #dimOverlay {
       position: fixed;
@@ -555,7 +573,7 @@
       <div class="panel-hero">
         <span class="panel-hero-icon">👤</span>
         <h1>Hi, I'm Rugen</h1>
-        <span class="panel-subtitle">Project Manager</span>
+        <span class="panel-subtitle">Project Manager transitioning into Product Ownership</span>
       </div>
 
       <div class="stat-row">
@@ -981,8 +999,8 @@
     const CFG = {
       GRAVITY:       0.32,   // px/frame² — lowered for longer arcs to reach moon
       LAUNCH_SCALE:  0.28,   // increased so bird can reach moon altitude
-      MAX_PULL:      110,    // max drag radius (px) from anchor
-      BIRD_RADIUS:   20,     // visual radius
+      MAX_PULL:      110,    // max drag radius (px) from anchor — recalculated on resize
+      BIRD_RADIUS:   20,     // visual radius — recalculated on resize
       HIT_RADIUS:    30,     // collision detection radius (generous)
       HIT_PADDING:   20,     // extra invisible hitbox padding on each target edge
       SHAKE_DUR:     440,    // ms — hit-shake animation duration
@@ -1123,34 +1141,44 @@
     // BUG FIX: targets moved from W*{0.54,0.70,0.86} to W*{0.42,0.58,0.74} so
     // all three are reachable across screen sizes. Also LAUNCH_SCALE increased.
     function recalculate() {
+      const mobile = W < 600;
       groundY = H * 0.82;
       dirtY   = groundY + 28;
       earthY  = dirtY   + 22;
       generateGrassBumps();
       generateDirtPebbles();
-      // Moon position — moved to H*0.18 so it's a more visible target
+      // Moon — scale radius for mobile
       moonX = W * 0.82;
-      moonY = H * 0.18;
-      moonR = 60;
+      moonY = H * (mobile ? 0.14 : 0.18);
+      moonR = Math.min(60, W * 0.12);
       // Firefly positions — scattered just above the grass
       fireflies.forEach((f, i) => { f.y = groundY - 22 - (i * 16 % 36); });
-      sling.x = W * 0.15;
+      sling.x = W * (mobile ? 0.12 : 0.15);
       sling.y = groundY - 4;
       bird.anchorX = sling.x;
-      bird.anchorY = sling.y - 82;
+      bird.anchorY = sling.y - Math.min(82, H * 0.095);
 
       if (state === S.IDLE || state === S.MISS) {
         bird.x = bird.anchorX;
         bird.y = bird.anchorY;
       }
 
-      const tW = Math.min(W * 0.115, 128); // wider targets for better visibility
-      const tH = Math.min(H * 0.44, 210);
-      const tY = groundY - tH / 2;         // targets stand on the ground
+      const tW = mobile ? Math.min(W * 0.13, 80) : Math.min(W * 0.115, 128);
+      const tH = mobile ? Math.min(H * 0.30, 160) : Math.min(H * 0.44, 210);
+      const tY = groundY - tH / 2;
 
-      targets[0].x = W * 0.42; targets[0].y = tY; targets[0].w = tW; targets[0].h = tH;
-      targets[1].x = W * 0.58; targets[1].y = tY; targets[1].w = tW; targets[1].h = tH;
-      targets[2].x = W * 0.74; targets[2].y = tY; targets[2].w = tW; targets[2].h = tH;
+      if (mobile) {
+        targets[0].x = W * 0.40; targets[0].y = tY; targets[0].w = tW; targets[0].h = tH;
+        targets[1].x = W * 0.60; targets[1].y = tY; targets[1].w = tW; targets[1].h = tH;
+        targets[2].x = W * 0.80; targets[2].y = tY; targets[2].w = tW; targets[2].h = tH;
+      } else {
+        targets[0].x = W * 0.42; targets[0].y = tY; targets[0].w = tW; targets[0].h = tH;
+        targets[1].x = W * 0.58; targets[1].y = tY; targets[1].w = tW; targets[1].h = tH;
+        targets[2].x = W * 0.74; targets[2].y = tY; targets[2].w = tW; targets[2].h = tH;
+      }
+      // Scale physics for screen size
+      CFG.MAX_PULL    = Math.min(110, W * 0.22);
+      CFG.BIRD_RADIUS = Math.min(20, W * 0.045);
     }
 
     function resize() {
@@ -1484,7 +1512,7 @@
     }
 
     function drawMoon() {
-      const mx = moonX || W * 0.82, my = moonY || H * 0.18, mr = 52;
+      const mx = moonX || W * 0.82, my = moonY || H * 0.18, mr = moonR || 52;
       // Outer halo
       const halo = ctx.createRadialGradient(mx, my, mr * 0.85, mx, my, mr * 3.2);
       halo.addColorStop(0,   'rgba(255,248,200,0.09)');
@@ -1534,7 +1562,7 @@
     // ─── RENDERING: MOON HINT (pulsing ring + ? badge) ──────────────────────────
     function drawMoonHint(now) {
       if (moonHit) return;
-      const mx = moonX || W * 0.82, my = moonY || H * 0.18, mr = 52;
+      const mx = moonX || W * 0.82, my = moonY || H * 0.18, mr = moonR || 52;
 
       // Outward-expanding dashed ring — suggests "something is here"
       const t   = (now % 2600) / 2600;
@@ -1751,10 +1779,11 @@
 
     // ─── RENDERING: SIGNBOARD ─────────────────────────────────────────────────
     function drawSignboard() {
-      const sx = sling.x - 145;
-      const boardW = 150, boardH = 52;
-      const boardY = groundY - 72;
-      const postW = 8, postH = 56;
+      const mobile = W < 600;
+      const boardW = mobile ? 110 : 150, boardH = mobile ? 40 : 52;
+      const sx = mobile ? Math.max(boardW/2 + 8, sling.x - 50) : sling.x - 145;
+      const boardY = groundY - (mobile ? 55 : 72);
+      const postW = mobile ? 6 : 8, postH = mobile ? 42 : 56;
 
       ctx.save();
 
@@ -1822,12 +1851,12 @@
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 3;
       ctx.fillStyle = '#f5deb3';
-      ctx.font = 'bold 13px system-ui, sans-serif';
+      ctx.font = 'bold ' + (mobile ? 10 : 13) + 'px system-ui, sans-serif';
       ctx.fillText("Hi Seek! I'm Rugenraj", sx, boardY + boardH * 0.35);
 
       // Line 2 — "Welcome to my portfolio"
       ctx.fillStyle = '#d4a55a';
-      ctx.font = '11px system-ui, sans-serif';
+      ctx.font = (mobile ? 8 : 11) + 'px system-ui, sans-serif';
       ctx.fillText('Welcome to my portfolio', sx, boardY + boardH * 0.68);
       ctx.shadowBlur = 0;
 
@@ -2261,11 +2290,12 @@
     // ─── RENDERING: UI OVERLAYS ─────────────────────────────────────────────────
     function drawUI(now) {
       if (state === S.IDLE) {
+        const mobile = W < 600;
         ctx.fillStyle    = 'rgba(241,245,249,0.65)';
-        ctx.font         = '14px system-ui, sans-serif';
+        ctx.font         = (mobile ? 11 : 14) + 'px system-ui, sans-serif';
         ctx.textAlign    = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillText('Drag & Release to Explore', sling.x, sling.y + 62);
+        ctx.fillText('Pull & Release to Explore', sling.x, sling.y + Math.min(62, H * 0.06));
       }
       if (state === S.MISS) {
         const elapsed = now - missTime;
@@ -2286,15 +2316,17 @@
     // ─── RENDERING: THROW COUNTER HUD ───────────────────────────────────────────
     function drawThrowCounter() {
       ctx.save();
-      const pillW = 138, pillH = 28, px = 14, py = 14;
+      const mobile = W < 600;
+      const pillW = mobile ? 105 : 138, pillH = mobile ? 22 : 28;
+      const px = mobile ? 8 : 14, py = mobile ? 46 : 14;
       ctx.fillStyle = 'rgba(4,6,20,0.72)';
       ctx.beginPath(); ctx.roundRect(px, py, pillW, pillH, 8); ctx.fill();
       ctx.strokeStyle = 'rgba(75,115,255,0.42)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.roundRect(px, py, pillW, pillH, 8); ctx.stroke();
       ctx.fillStyle = 'rgba(200,220,255,0.85)';
-      ctx.font = 'bold 11px system-ui, sans-serif';
+      ctx.font = 'bold ' + (mobile ? 9 : 11) + 'px system-ui, sans-serif';
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-      ctx.fillText('🐦  THROWS: ' + throwCount, px + 12, py + 14);
+      ctx.fillText('🐦  THROWS: ' + throwCount, px + 10, py + pillH / 2);
       ctx.restore();
     }
 
