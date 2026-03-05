@@ -1184,14 +1184,17 @@
       const tH = mobile ? (landscape ? Math.min(H * 0.28, 130) : Math.min(H * 0.30, 160)) : Math.min(H * 0.44, 210);
       const tY = groundY - tH / 2;
 
+      const tH3 = tH * 1.12; // third target slightly taller
+      const tY3 = groundY - tH3 / 2;
+
       if (mobile) {
         targets[0].x = W * 0.38; targets[0].y = tY; targets[0].w = tW; targets[0].h = tH;
         targets[1].x = W * 0.56; targets[1].y = tY; targets[1].w = tW; targets[1].h = tH;
-        targets[2].x = W * 0.74; targets[2].y = tY; targets[2].w = tW; targets[2].h = tH;
+        targets[2].x = W * 0.74; targets[2].y = tY3; targets[2].w = tW; targets[2].h = tH3;
       } else {
         targets[0].x = W * 0.42; targets[0].y = tY; targets[0].w = tW; targets[0].h = tH;
         targets[1].x = W * 0.58; targets[1].y = tY; targets[1].w = tW; targets[1].h = tH;
-        targets[2].x = W * 0.74; targets[2].y = tY; targets[2].w = tW; targets[2].h = tH;
+        targets[2].x = W * 0.74; targets[2].y = tY3; targets[2].w = tW; targets[2].h = tH3;
       }
       // Scale physics for screen size
       CFG.MAX_PULL    = Math.min(110, W * 0.22);
@@ -1797,8 +1800,8 @@
     // ─── RENDERING: SIGNBOARD ─────────────────────────────────────────────────
     function drawSignboard() {
       const mobile = Math.min(W, H) < 600;
-      const boardW = mobile ? 110 : 150, boardH = mobile ? 40 : 52;
-      const sx = mobile ? Math.max(boardW/2 + 8, sling.x - 50) : sling.x - 145;
+      const boardW = mobile ? 100 : 150, boardH = mobile ? 36 : 52;
+      const sx = mobile ? Math.max(boardW/2 + 6, sling.x - W * 0.14) : sling.x - 145;
       const boardY = groundY - (mobile ? 55 : 72);
       const postW = mobile ? 6 : 8, postH = mobile ? 42 : 56;
 
