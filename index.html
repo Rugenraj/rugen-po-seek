@@ -158,6 +158,22 @@
         letter-spacing: 0.08em;
       }
     }
+    @media (max-height: 500px) {
+      #skipNav {
+        top: 4px;
+        padding: 4px 8px;
+        gap: 0;
+        max-width: calc(100vw - 16px);
+      }
+      .nav-brand { display: none; }
+      .nav-divider { display: none; }
+      .nav-links { gap: 6px; padding: 0 2px; }
+      #skipNav button {
+        padding: 4px 14px;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+      }
+    }
 
     /* ─── DIM OVERLAY (fades in when panel opens) ──────────────────────────────── */
     #dimOverlay {
@@ -1141,7 +1157,7 @@
     // BUG FIX: targets moved from W*{0.54,0.70,0.86} to W*{0.42,0.58,0.74} so
     // all three are reachable across screen sizes. Also LAUNCH_SCALE increased.
     function recalculate() {
-      const mobile = W < 600;
+      const mobile = Math.min(W, H) < 600;
       groundY = H * 0.82;
       dirtY   = groundY + 28;
       earthY  = dirtY   + 22;
@@ -1163,14 +1179,15 @@
         bird.y = bird.anchorY;
       }
 
-      const tW = mobile ? Math.min(W * 0.13, 80) : Math.min(W * 0.115, 128);
-      const tH = mobile ? Math.min(H * 0.30, 160) : Math.min(H * 0.44, 210);
+      const landscape = mobile && W > H;
+      const tW = mobile ? Math.min(W * 0.09, 72) : Math.min(W * 0.115, 128);
+      const tH = mobile ? (landscape ? Math.min(H * 0.28, 130) : Math.min(H * 0.30, 160)) : Math.min(H * 0.44, 210);
       const tY = groundY - tH / 2;
 
       if (mobile) {
-        targets[0].x = W * 0.40; targets[0].y = tY; targets[0].w = tW; targets[0].h = tH;
-        targets[1].x = W * 0.60; targets[1].y = tY; targets[1].w = tW; targets[1].h = tH;
-        targets[2].x = W * 0.80; targets[2].y = tY; targets[2].w = tW; targets[2].h = tH;
+        targets[0].x = W * 0.38; targets[0].y = tY; targets[0].w = tW; targets[0].h = tH;
+        targets[1].x = W * 0.56; targets[1].y = tY; targets[1].w = tW; targets[1].h = tH;
+        targets[2].x = W * 0.74; targets[2].y = tY; targets[2].w = tW; targets[2].h = tH;
       } else {
         targets[0].x = W * 0.42; targets[0].y = tY; targets[0].w = tW; targets[0].h = tH;
         targets[1].x = W * 0.58; targets[1].y = tY; targets[1].w = tW; targets[1].h = tH;
@@ -1779,7 +1796,7 @@
 
     // ─── RENDERING: SIGNBOARD ─────────────────────────────────────────────────
     function drawSignboard() {
-      const mobile = W < 600;
+      const mobile = Math.min(W, H) < 600;
       const boardW = mobile ? 110 : 150, boardH = mobile ? 40 : 52;
       const sx = mobile ? Math.max(boardW/2 + 8, sling.x - 50) : sling.x - 145;
       const boardY = groundY - (mobile ? 55 : 72);
@@ -2290,12 +2307,16 @@
     // ─── RENDERING: UI OVERLAYS ─────────────────────────────────────────────────
     function drawUI(now) {
       if (state === S.IDLE) {
-        const mobile = W < 600;
-        ctx.fillStyle    = 'rgba(241,245,249,0.65)';
+        const mobile = Math.min(W, H) < 600;
+        const blink = Math.abs(Math.sin(now * 0.003));
+        ctx.save();
+        ctx.globalAlpha  = 0.3 + blink * 0.65;
+        ctx.fillStyle    = '#f5deb3';
         ctx.font         = (mobile ? 11 : 14) + 'px system-ui, sans-serif';
         ctx.textAlign    = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillText('Pull & Release to Explore', sling.x, sling.y + Math.min(62, H * 0.06));
+        ctx.fillText('Pull & Release to Explore', sling.x, sling.y + Math.min(95, H * 0.10));
+        ctx.restore();
       }
       if (state === S.MISS) {
         const elapsed = now - missTime;
@@ -2316,7 +2337,7 @@
     // ─── RENDERING: THROW COUNTER HUD ───────────────────────────────────────────
     function drawThrowCounter() {
       ctx.save();
-      const mobile = W < 600;
+      const mobile = Math.min(W, H) < 600;
       const pillW = mobile ? 105 : 138, pillH = mobile ? 22 : 28;
       const px = mobile ? 8 : 14, py = mobile ? 46 : 14;
       ctx.fillStyle = 'rgba(4,6,20,0.72)';
